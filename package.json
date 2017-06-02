@@ -1,0 +1,22 @@
+{
+  "name": "nodebasic",
+  "version": "1.0.0",
+  "description": "simple node application",
+  "main": "app.js",
+  "scripts": {
+    "start": "node app"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/LetCodie/node-basic.git"
+  },
+  "author": "Radin Reth",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/LetCodie/node-basic/issues"
+  },
+  "homepage": "https://github.com/LetCodie/node-basic#readme",
+  "dependencies": {
+    "express": "^4.15.3"
+  }
+}
