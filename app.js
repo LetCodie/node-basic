@@ -23,6 +23,8 @@ app.set('view engine', 'pug');
 app.use(bodyParser.urlencoded({ extended: false }));
 app.use(bodyParser.json());
 
+app.use(express.static(path.join(__dirname, 'public')));
+
 app.get('/', (req, resp) => {
   Article.find({}, function(err, articles){
     if(err) {
@@ -57,6 +59,18 @@ app.post('/articles/add', function(req, res) {
     }
   });
 })
+
+app.get('/articles/:id', function(req, res) {
+  Article.findById(req.params.id, function(err, article) {
+    if(err) {
+      console.log(err);
+    } else {
+      res.render('article', {
+        article: article
+      })
+    }
+  });
+});
 
 app.listen(3000, function() {
   console.log("Server started on port 3000...");
