@@ -2,6 +2,9 @@ const express = require('express');
 const path = require('path');
 const mongoose = require('mongoose');
 const bodyParser = require('body-parser');
+const expressValidator = require('express-validator');
+const flash = require('connect-flash');
+const session = require('express-session');
 
 mongoose.connect('mongodb://localhost/node-basic');
 let db = mongoose.connection;
@@ -25,6 +28,35 @@ app.use(bodyParser.json());
 
 app.use(express.static(path.join(__dirname, 'public')));
 
+app.use(session({
+  secret: 'some secret',
+  resave: true,
+  saveUninitialized: true
+}));
+
+app.use(require('connect-flash')());
+app.use(function(req, res, next) {
+  res.locals.messages = require('express-messages')(req, res);
+  next();
+});
+
+app.use(expressValidator({
+  errorFormatter: function(param, msg, value) {
+      var namespace = param.split('.')
+      , root    = namespace.shift()
+      , formParam = root;
+
+    while(namespace.length) {
+      formParam += '[' + namespace.shift() + ']';
+    }
+    return {
+      param : formParam,
+      msg   : msg,
+      value : value
+    };
+  }
+}));
+
 app.get('/', (req, resp) => {
   Article.find({}, function(err, articles){
     if(err) {
@@ -45,19 +77,33 @@ app.get('/articles/add', function(req, res) {
 });
 
 app.post('/articles/add', function(req, res) {
-  let article = new Article();
-  article.title = req.body.title;
-  article.author = req.body.author;
-  article.body = req.body.body;
+  req.checkBody('title', 'Title is required!').notEmpty();
+  req.checkBody('author', 'Author is required!').notEmpty();
+  req.checkBody('body', 'Body is required!').notEmpty();
 
-  article.save(function(err){
-    if(err) {
-      console.log(err);
-      return;
-    } else {
-      res.redirect('/');
-    }
-  });
+  let errors = req.validationErrors();
+
+  if(errors) {
+    res.render('add_article', {
+      title: 'Add Article',
+      errors: errors
+    })
+  } else {
+    let article = new Article();
+    article.title = req.body.title;
+    article.author = req.body.author;
+    article.body = req.body.body;
+
+    article.save(function(err){
+      if(err) {
+        console.log(err);
+        return;
+      } else {
+        req.flash('success', 'Article Added!');
+        res.redirect('/');
+      }
+    });
+  }
 })
 
 app.get('/articles/:id', function(req, res) {
@@ -96,6 +142,7 @@ app.post('/articles/edit/:id', function(req, res) {
     if(err) {
       console.log(err);
     }else{
+      req.flash('success', 'Article edited');
       res.redirect('/');
     }
   });
@@ -108,6 +155,7 @@ app.delete('/articles/:id', function(req, res) {
     if(err) {
       console.log(err);
     } else {
+      req.flash('danger', 'Article removed');
       res.send('Success');
     }
   })
