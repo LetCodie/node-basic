@@ -5,8 +5,10 @@ const bodyParser = require('body-parser');
 const expressValidator = require('express-validator');
 const flash = require('connect-flash');
 const session = require('express-session');
+const passport = require('passport');
+const config = require('./config/database');
 
-mongoose.connect('mongodb://localhost/node-basic');
+mongoose.connect(config.database);
 let db = mongoose.connection;
 db.once('open', function(){
     console.log('Connected to mongodb...');
@@ -57,6 +59,15 @@ app.use(expressValidator({
   }
 }));
 
+require('./config/passport')(passport);
+app.use(passport.initialize());
+app.use(passport.session());
+
+app.get('*', function(req, res, next) {
+  res.locals.user = req.user || null;
+  next();
+});
+
 app.get('/', (req, resp) => {
   Article.find({}, function(err, articles){
     if(err) {
@@ -75,6 +86,8 @@ let users = require('./routes/users');
 
 app.use('/articles', articles);
 app.use('/users', users);
+
+
 
 app.listen(3000, function() {
   console.log("Server started on port 3000...");
